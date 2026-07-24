@@ -88,6 +88,3 @@ To build and run the entire stack (Database + Web App) using Docker:
 ```bash
 docker-compose up --build -d
 ```
-
-## 📝 License
-MIT License
