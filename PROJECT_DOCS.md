@@ -22,12 +22,42 @@ Food Bot is a monorepo for an AI-powered campus food ordering and pre-booking pl
   - shared: common types, validators, and utilities.
   - whatsapp: WhatsApp integration client.
 
+### High-Level Diagram
+```mermaid
+flowchart LR
+    User[Student / Vendor / Admin] --> Web[Next.js Web App]
+    User --> WhatsApp[WhatsApp Chat Flow]
+    Web --> Auth[Auth Package]
+    Web --> DB[(PostgreSQL / Prisma)]
+    WhatsApp --> AI[AI Agent Package]
+    AI --> DB
+    AI --> Rec[Recommendation Engine]
+    Web --> Notif[Notifications]
+    Web --> Queue[Queue / Slot Engine]
+```
+
 ## 4. Low-Level Architecture
 ### Application Layers
 - Presentation: React components and app routes under apps/web.
 - API layer: route handlers for auth, webhooks, and dashboard operations.
 - Domain logic: packages for queueing, recommendations, analytics, and AI.
 - Persistence: PostgreSQL via Prisma models defined in packages/database/prisma/schema.prisma.
+
+### Low-Level Diagram
+```mermaid
+flowchart TD
+    UI[React Components / Pages] --> API[Route Handlers]
+    API --> AuthMod[Auth Module]
+    API --> AIModel[AI / RAG Module]
+    API --> QueueMod[Queue Scheduler]
+    API --> RecoMod[Recommendation Engine]
+    API --> NotifyMod[Notification Service]
+    AuthMod --> DB[(Prisma Client)]
+    AIModel --> DB
+    QueueMod --> DB
+    RecoMod --> DB
+    NotifyMod --> DB
+```
 
 ### Key Modules
 - Auth package handles user identity and RBAC.
@@ -55,6 +85,21 @@ Food Bot is a monorepo for an AI-powered campus food ordering and pre-booking pl
 2. Review RBAC and permissions.
 3. Monitor platform-level metrics.
 4. Publish announcements and platform updates.
+
+### Workflow Diagram
+```mermaid
+flowchart TD
+    A[User Starts] --> B{Authenticated?}
+    B -->|No| C[Register / Login]
+    B -->|Yes| D[Open Dashboard]
+    C --> D
+    D --> E[Browse Menu]
+    E --> F[Add Items to Cart]
+    F --> G[Choose Pickup Slot]
+    G --> H[Confirm Order]
+    H --> I[Track Order Status]
+    I --> J[Notify Student / Vendor]
+```
 
 ## 6. Development Workflow
 - Install dependencies with pnpm.
