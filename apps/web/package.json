@@ -1,0 +1,51 @@
+{
+  "name": "@smartfood/web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.9.1",
+    "@smartfood/ai": "workspace:*",
+    "@smartfood/analytics": "workspace:*",
+    "@smartfood/auth": "workspace:*",
+    "@smartfood/database": "workspace:*",
+    "@smartfood/notifications": "workspace:*",
+    "@smartfood/queue": "workspace:*",
+    "@smartfood/recommendation": "workspace:*",
+    "@smartfood/shared": "workspace:*",
+    "@smartfood/whatsapp": "workspace:*",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^11.18.2",
+    "lucide-react": "^0.460.0",
+    "next": "15.0.3",
+    "next-auth": "5.0.0-beta.32",
+    "nuqs": "^2.1.2",
+    "react": "19.0.0-rc-66855b96-20241106",
+    "react-dom": "19.0.0-rc-66855b96-20241106",
+    "react-hook-form": "^7.53.2",
+    "recharts": "^2.13.3",
+    "sonner": "^1.7.0",
+    "swr": "^2.2.5",
+    "tailwind-merge": "^2.5.4",
+    "zod": "^3.23.8",
+    "zustand": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "eslint": "^9.14.0",
+    "eslint-config-next": "15.0.3",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.14",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.6.3"
+  }
+}

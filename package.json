@@ -1,0 +1,31 @@
+{
+  "name": "smartfood-ai",
+  "private": true,
+  "version": "1.0.0",
+  "description": "LPU SmartFood AI — AI-Powered WhatsApp Food Pre-Booking Platform",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "type-check": "turbo run type-check",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rimraf node_modules",
+    "db:generate": "turbo run db:generate --filter=@smartfood/database",
+    "db:migrate": "turbo run db:migrate --filter=@smartfood/database",
+    "db:push": "turbo run db:push --filter=@smartfood/database",
+    "db:seed": "turbo run db:seed --filter=@smartfood/database",
+    "db:studio": "turbo run db:studio --filter=@smartfood/database"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "rimraf": "^6.0.1",
+    "turbo": "^2.3.3",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.14.2"
+}

@@ -1,0 +1,1202 @@
+// =============================================================================
+// LPU SmartFood AI — Complete Prisma Schema
+// =============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pgvector(map: "vector", schema: "public"), uuidOssp(map: "uuid-ossp")]
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum UserRole {
+  STUDENT
+  VENDOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum StudentStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+  DEACTIVATED
+}
+
+enum VendorStatus {
+  PENDING_APPROVAL
+  ACTIVE
+  SUSPENDED
+  REJECTED
+  INACTIVE
+}
+
+enum StallStatus {
+  OPEN
+  CLOSED
+  PAUSED
+  MAINTENANCE
+}
+
+enum StallCategory {
+  NORTH_INDIAN
+  SOUTH_INDIAN
+  CHINESE
+  CONTINENTAL
+  FAST_FOOD
+  BEVERAGES
+  SNACKS
+  DESSERTS
+  HEALTHY
+  MIXED
+}
+
+enum DietaryType {
+  VEG
+  NON_VEG
+  JAIN
+  VEGAN
+}
+
+enum MenuItemStatus {
+  AVAILABLE
+  UNAVAILABLE
+  OUT_OF_STOCK
+  PAUSED
+}
+
+enum MealCategory {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACKS
+  BEVERAGES
+  DESSERTS
+  SPECIALS
+}
+
+enum OrderStatus {
+  PLACED
+  ACCEPTED
+  PREPARING
+  READY
+  COLLECTED
+  COMPLETED
+  CANCELLED
+  REJECTED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMethod {
+  UPI
+  CREDIT_CARD
+  DEBIT_CARD
+  WALLET
+  CASH
+  MOCK
+}
+
+enum NotificationType {
+  ORDER_PLACED
+  ORDER_ACCEPTED
+  ORDER_PREPARING
+  ORDER_READY
+  ORDER_COLLECTED
+  ORDER_COMPLETED
+  ORDER_CANCELLED
+  ORDER_REJECTED
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  REFUND_PROCESSED
+  LOW_STOCK_ALERT
+  VENDOR_UPDATE
+  ANNOUNCEMENT
+  PROMOTION
+  SYSTEM
+  RECOMMENDATION
+  PICKUP_REMINDER
+  DELAY_ALERT
+}
+
+enum NotificationChannel {
+  WHATSAPP
+  EMAIL
+  PUSH
+  IN_APP
+}
+
+enum PickupSlotStatus {
+  AVAILABLE
+  FULL
+  CLOSED
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum ConversationStatus {
+  ACTIVE
+  ENDED
+  ESCALATED
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VOICE
+  BUTTON
+  LIST
+  TEMPLATE
+  LOCATION
+  DOCUMENT
+}
+
+enum PredictionType {
+  DAILY_DEMAND
+  PEAK_HOURS
+  VENDOR_LOAD
+  INGREDIENT_REQUIREMENT
+  REVENUE_FORECAST
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  ESCALATED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum AnnouncementTarget {
+  STUDENTS
+  VENDORS
+  EVERYONE
+}
+
+enum AnnouncementStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REPORTED
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+  REFUND
+  REWARD_CREDIT
+  REWARD_DEBIT
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  REGISTER
+  PASSWORD_RESET
+  PROFILE_UPDATE
+  ORDER_PLACED
+  ORDER_CANCELLED
+  ORDER_UPDATED
+  MENU_CREATED
+  MENU_UPDATED
+  MENU_DELETED
+  INVENTORY_UPDATED
+  PRICE_CHANGED
+  ROLE_CHANGED
+  PERMISSION_CHANGED
+  VENDOR_APPROVED
+  VENDOR_REJECTED
+  STUDENT_SUSPENDED
+  PAYMENT_PROCESSED
+  REFUND_PROCESSED
+  ANNOUNCEMENT_PUBLISHED
+  SYSTEM_CONFIG_CHANGED
+}
+
+enum EmbeddingType {
+  MENU_ITEM
+  FAQ
+  VENDOR_INFO
+  ANNOUNCEMENT
+  POLICY
+}
+
+// =============================================================================
+// STUDENT
+// =============================================================================
+
+model Student {
+  id                     String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  registrationNumber     String        @unique @map("registration_number")
+  name                   String
+  email                  String        @unique
+  phone                  String?       @unique
+  passwordHash           String        @map("password_hash")
+  profilePicture         String?       @map("profile_picture")
+  department             String?
+  course                 String?
+  year                   Int?
+  preferredLanguage      String        @default("en") @map("preferred_language")
+  dietaryPreference      DietaryType?  @map("dietary_preference")
+  walletBalance          Decimal       @default(0) @db.Decimal(10, 2) @map("wallet_balance")
+  rewardPoints           Int           @default(0) @map("reward_points")
+  status                 StudentStatus @default(PENDING_VERIFICATION)
+  emailVerified          Boolean       @default(false) @map("email_verified")
+  emailVerifiedAt        DateTime?     @map("email_verified_at")
+  phoneVerified          Boolean       @default(false) @map("phone_verified")
+  notificationPrefs      Json          @default("{\"whatsapp\": true, \"email\": true, \"push\": true}") @map("notification_prefs")
+  lastLoginAt            DateTime?     @map("last_login_at")
+  createdAt              DateTime      @default(now()) @map("created_at")
+  updatedAt              DateTime      @updatedAt @map("updated_at")
+  deletedAt              DateTime?     @map("deleted_at")
+
+  // Relations
+  orders           Order[]
+  reviews          Review[]
+  favoriteFoods    FavoriteFood[]
+  conversations    Conversation[]
+  notifications    Notification[]
+  walletTxns       WalletTransaction[]
+  recommendations  Recommendation[]
+  auditLogs        AuditLog[]        @relation("StudentAuditLogs")
+  supportTickets   SupportTicket[]
+  sessions         StudentSession[]
+  passwordResets   PasswordReset[]
+
+  @@index([email])
+  @@index([registrationNumber])
+  @@index([phone])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("students")
+}
+
+model StudentSession {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId    String   @db.Uuid @map("student_id")
+  token        String   @unique
+  refreshToken String   @unique @map("refresh_token")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([token])
+  @@map("student_sessions")
+}
+
+// =============================================================================
+// VENDOR
+// =============================================================================
+
+model Vendor {
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String
+  email            String       @unique
+  phone            String?      @unique
+  passwordHash     String       @map("password_hash")
+  profilePicture   String?      @map("profile_picture")
+  businessName     String       @map("business_name")
+  status           VendorStatus @default(PENDING_APPROVAL)
+  emailVerified    Boolean      @default(false) @map("email_verified")
+  notificationPrefs Json        @default("{\"whatsapp\": true, \"email\": true}") @map("notification_prefs")
+  lastLoginAt      DateTime?    @map("last_login_at")
+  approvedAt       DateTime?    @map("approved_at")
+  approvedById     String?      @db.Uuid @map("approved_by_id")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+  deletedAt        DateTime?    @map("deleted_at")
+
+  // Relations
+  foodStalls       FoodStall[]
+  notifications    Notification[]
+  auditLogs        AuditLog[]        @relation("VendorAuditLogs")
+  sessions         VendorSession[]
+  passwordResets   PasswordReset[]
+
+  @@index([email])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("vendors")
+}
+
+model VendorSession {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vendorId     String   @db.Uuid @map("vendor_id")
+  token        String   @unique
+  refreshToken String   @unique @map("refresh_token")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId])
+  @@index([token])
+  @@map("vendor_sessions")
+}
+
+// =============================================================================
+// ADMIN
+// =============================================================================
+
+model Admin {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  email          String    @unique
+  phone          String?   @unique
+  passwordHash   String    @map("password_hash")
+  profilePicture String?   @map("profile_picture")
+  permissions    String[]  @default([])
+  isSuperAdmin   Boolean   @default(false) @map("is_super_admin")
+  lastLoginAt    DateTime? @map("last_login_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  // Relations
+  notifications    Notification[]
+  auditLogs        AuditLog[]         @relation("AdminAuditLogs")
+  createdAnnouncements Announcement[] @relation("AnnouncementAuthor")
+  sessions         AdminSession[]
+  passwordResets   PasswordReset[]
+
+  @@index([email])
+  @@index([isSuperAdmin])
+  @@index([deletedAt])
+  @@map("admins")
+}
+
+model AdminSession {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  adminId      String   @db.Uuid @map("admin_id")
+  token        String   @unique
+  refreshToken String   @unique @map("refresh_token")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  admin Admin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([token])
+  @@map("admin_sessions")
+}
+
+model PasswordReset {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email       String
+  token       String    @unique
+  role        UserRole
+  expiresAt   DateTime  @map("expires_at")
+  usedAt      DateTime? @map("used_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Polymorphic relations
+  studentId   String?   @db.Uuid @map("student_id")
+  vendorId    String?   @db.Uuid @map("vendor_id")
+  adminId     String?   @db.Uuid @map("admin_id")
+
+  student     Student?  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  vendor      Vendor?   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  admin       Admin?    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([token])
+  @@map("password_resets")
+}
+
+// =============================================================================
+// FOOD STALL
+// =============================================================================
+
+model FoodStall {
+  id                   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vendorId             String        @db.Uuid @map("vendor_id")
+  name                 String
+  description          String?
+  category             StallCategory @default(MIXED)
+  location             String
+  latitude             Float?
+  longitude            Float?
+  images               String[]      @default([])
+  openingTime          String        @map("opening_time")
+  closingTime          String        @map("closing_time")
+  operatingDays        String[]      @default(["MON", "TUE", "WED", "THU", "FRI", "SAT"])
+  status               StallStatus   @default(CLOSED)
+  averagePrepTime      Int           @default(15) @map("average_prep_time") // minutes
+  currentQueueLength   Int           @default(0) @map("current_queue_length")
+  maxQueueCapacity     Int           @default(50) @map("max_queue_capacity")
+  kitchenCapacity      Int           @default(10) @map("kitchen_capacity") // concurrent orders
+  rating               Float         @default(0) @db.DoublePrecision
+  totalReviews         Int           @default(0) @map("total_reviews")
+  isVerified           Boolean       @default(false) @map("is_verified")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+  deletedAt            DateTime?     @map("deleted_at")
+
+  // Relations
+  vendor          Vendor           @relation(fields: [vendorId], references: [id])
+  menuCategories  MenuCategory[]
+  menuItems       MenuItem[]
+  orders          Order[]
+  pickupSlots     PickupSlot[]
+  reviews         Review[]
+  inventory       Inventory[]
+  queueStatuses   QueueStatus[]
+  analytics       Analytics[]
+  demandPredictions DemandPrediction[]
+
+  @@index([vendorId])
+  @@index([status])
+  @@index([category])
+  @@index([deletedAt])
+  @@map("food_stalls")
+}
+
+// =============================================================================
+// MENU
+// =============================================================================
+
+model MenuCategory {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stallId     String    @db.Uuid @map("stall_id")
+  name        String
+  description String?
+  image       String?
+  sortOrder   Int       @default(0) @map("sort_order")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  stall     FoodStall  @relation(fields: [stallId], references: [id], onDelete: Cascade)
+  menuItems MenuItem[]
+
+  @@index([stallId])
+  @@index([deletedAt])
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stallId          String         @db.Uuid @map("stall_id")
+  categoryId       String?        @db.Uuid @map("category_id")
+  name             String
+  description      String?
+  image            String?
+  price            Decimal        @db.Decimal(10, 2)
+  discountedPrice  Decimal?       @db.Decimal(10, 2) @map("discounted_price")
+  discountPercent  Float?         @map("discount_percent")
+  mealCategory     MealCategory   @default(SNACKS) @map("meal_category")
+  dietaryType      DietaryType    @default(VEG) @map("dietary_type")
+  status           MenuItemStatus @default(AVAILABLE)
+  preparationTime  Int            @default(10) @map("preparation_time") // minutes
+  calories         Int?
+  ingredients      String[]       @default([])
+  tags             String[]       @default([])
+  isSpecial        Boolean        @default(false) @map("is_special")
+  popularityScore  Float          @default(0) @db.DoublePrecision @map("popularity_score")
+  totalOrders      Int            @default(0) @map("total_orders")
+  rating           Float          @default(0) @db.DoublePrecision
+  totalReviews     Int            @default(0) @map("total_reviews")
+  sortOrder        Int            @default(0) @map("sort_order")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+  deletedAt        DateTime?      @map("deleted_at")
+
+  stall       FoodStall     @relation(fields: [stallId], references: [id])
+  category    MenuCategory? @relation(fields: [categoryId], references: [id])
+  orderItems  OrderItem[]
+  reviews     Review[]
+  favorites   FavoriteFood[]
+  inventory   Inventory[]
+  embeddings  MenuItemEmbedding[]
+  recommendations Recommendation[]
+
+  @@index([stallId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([dietaryType])
+  @@index([mealCategory])
+  @@index([popularityScore(sort: Desc)])
+  @@index([deletedAt])
+  @@map("menu_items")
+}
+
+model MenuItemEmbedding {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  menuItemId  String    @db.Uuid @map("menu_item_id")
+  content     String
+  embedding   Unsupported("vector(1536)")?
+  type        EmbeddingType @default(MENU_ITEM)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  menuItem    MenuItem  @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@index([menuItemId])
+  @@map("menu_item_embeddings")
+}
+
+// =============================================================================
+// INVENTORY
+// =============================================================================
+
+model Inventory {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stallId         String    @db.Uuid @map("stall_id")
+  menuItemId      String?   @db.Uuid @map("menu_item_id")
+  ingredientName  String    @map("ingredient_name")
+  unit            String
+  currentStock    Float     @map("current_stock")
+  reorderLevel    Float     @map("reorder_level")
+  maxStock        Float     @map("max_stock")
+  costPerUnit     Decimal   @db.Decimal(10, 2) @map("cost_per_unit")
+  supplierId      String?   @map("supplier_id")
+  supplierName    String?   @map("supplier_name")
+  expiryDate      DateTime? @map("expiry_date")
+  lastRestocked   DateTime? @map("last_restocked")
+  isLowStock      Boolean   @default(false) @map("is_low_stock")
+  isOutOfStock    Boolean   @default(false) @map("is_out_of_stock")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  stall    FoodStall  @relation(fields: [stallId], references: [id])
+  menuItem MenuItem?  @relation(fields: [menuItemId], references: [id])
+
+  @@index([stallId])
+  @@index([menuItemId])
+  @@index([isLowStock])
+  @@index([isOutOfStock])
+  @@index([deletedAt])
+  @@map("inventory")
+}
+
+// =============================================================================
+// ORDERS
+// =============================================================================
+
+model PickupSlot {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stallId         String           @db.Uuid @map("stall_id")
+  date            DateTime         @db.Date
+  startTime       String           @map("start_time")
+  endTime         String           @map("end_time")
+  maxOrders       Int              @default(20) @map("max_orders")
+  currentOrders   Int              @default(0) @map("current_orders")
+  status          PickupSlotStatus @default(AVAILABLE)
+  estimatedWait   Int              @default(0) @map("estimated_wait") // minutes
+  isRecommended   Boolean          @default(false) @map("is_recommended")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  stall   FoodStall @relation(fields: [stallId], references: [id])
+  orders  Order[]
+
+  @@index([stallId])
+  @@index([date])
+  @@index([status])
+  @@map("pickup_slots")
+}
+
+model Order {
+  id                   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderNumber          String        @unique @map("order_number")
+  studentId            String        @db.Uuid @map("student_id")
+  stallId              String        @db.Uuid @map("stall_id")
+  pickupSlotId         String?       @db.Uuid @map("pickup_slot_id")
+  status               OrderStatus   @default(PLACED)
+  paymentStatus        PaymentStatus @default(PENDING)
+  specialInstructions  String?       @map("special_instructions")
+  subtotal             Decimal       @db.Decimal(10, 2)
+  discountAmount       Decimal       @default(0) @db.Decimal(10, 2) @map("discount_amount")
+  taxAmount            Decimal       @default(0) @db.Decimal(10, 2) @map("tax_amount")
+  totalAmount          Decimal       @db.Decimal(10, 2) @map("total_amount")
+  estimatedReadyTime   DateTime?     @map("estimated_ready_time")
+  actualReadyTime      DateTime?     @map("actual_ready_time")
+  estimatedPickupTime  DateTime?     @map("estimated_pickup_time")
+  actualPickupTime     DateTime?     @map("actual_pickup_time")
+  queuePosition        Int?          @map("queue_position")
+  estimatedWaitMinutes Int?          @map("estimated_wait_minutes")
+  qrCode               String?       @unique @map("qr_code")
+  qrCodeExpiresAt      DateTime?     @map("qr_code_expires_at")
+  qrScannedAt          DateTime?     @map("qr_scanned_at")
+  couponCode           String?       @map("coupon_code")
+  rewardPointsEarned   Int           @default(0) @map("reward_points_earned")
+  rewardPointsUsed     Int           @default(0) @map("reward_points_used")
+  isWhatsAppOrder      Boolean       @default(false) @map("is_whatsapp_order")
+  vendorNotes          String?       @map("vendor_notes")
+  cancelledAt          DateTime?     @map("cancelled_at")
+  cancellationReason   String?       @map("cancellation_reason")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+  deletedAt            DateTime?     @map("deleted_at")
+
+  student     Student     @relation(fields: [studentId], references: [id])
+  stall       FoodStall   @relation(fields: [stallId], references: [id])
+  pickupSlot  PickupSlot? @relation(fields: [pickupSlotId], references: [id])
+  items       OrderItem[]
+  payment     Payment?
+  invoice     Invoice?
+  review      Review?     @relation("OrderReview")
+  statusHistory OrderStatusHistory[]
+
+  @@index([studentId])
+  @@index([stallId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([orderNumber])
+  @@index([createdAt(sort: Desc)])
+  @@index([deletedAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId         String    @db.Uuid @map("order_id")
+  menuItemId      String    @db.Uuid @map("menu_item_id")
+  quantity        Int
+  unitPrice       Decimal   @db.Decimal(10, 2) @map("unit_price")
+  totalPrice      Decimal   @db.Decimal(10, 2) @map("total_price")
+  specialRequest  String?   @map("special_request")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@index([orderId])
+  @@index([menuItemId])
+  @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId   String      @db.Uuid @map("order_id")
+  status    OrderStatus
+  notes     String?
+  changedBy String?     @map("changed_by")
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_status_history")
+}
+
+// =============================================================================
+// PAYMENT
+// =============================================================================
+
+model Payment {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId           String        @unique @db.Uuid @map("order_id")
+  studentId         String        @db.Uuid @map("student_id")
+  amount            Decimal       @db.Decimal(10, 2)
+  currency          String        @default("INR")
+  method            PaymentMethod @default(MOCK)
+  status            PaymentStatus @default(PENDING)
+  gatewayTxnId      String?       @unique @map("gateway_txn_id")
+  gatewayResponse   Json?         @map("gateway_response")
+  refundAmount      Decimal?      @db.Decimal(10, 2) @map("refund_amount")
+  refundedAt        DateTime?     @map("refunded_at")
+  refundReason      String?       @map("refund_reason")
+  paidAt            DateTime?     @map("paid_at")
+  failureReason     String?       @map("failure_reason")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([studentId])
+  @@index([status])
+  @@map("payments")
+}
+
+model Invoice {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId     String    @unique @db.Uuid @map("order_id")
+  invoiceNo   String    @unique @map("invoice_no")
+  studentName String    @map("student_name")
+  stallName   String    @map("stall_name")
+  items       Json
+  subtotal    Decimal   @db.Decimal(10, 2)
+  discount    Decimal   @default(0) @db.Decimal(10, 2)
+  tax         Decimal   @default(0) @db.Decimal(10, 2)
+  total       Decimal   @db.Decimal(10, 2)
+  pdfUrl      String?   @map("pdf_url")
+  generatedAt DateTime  @default(now()) @map("generated_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([invoiceNo])
+  @@map("invoices")
+}
+
+model WalletTransaction {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId       String          @db.Uuid @map("student_id")
+  type            TransactionType
+  amount          Decimal         @db.Decimal(10, 2)
+  balanceBefore   Decimal         @db.Decimal(10, 2) @map("balance_before")
+  balanceAfter    Decimal         @db.Decimal(10, 2) @map("balance_after")
+  description     String
+  referenceId     String?         @map("reference_id")
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@index([studentId])
+  @@index([type])
+  @@index([createdAt(sort: Desc)])
+  @@map("wallet_transactions")
+}
+
+// =============================================================================
+// REVIEWS & FAVORITES
+// =============================================================================
+
+model Review {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId   String       @db.Uuid @map("student_id")
+  stallId     String       @db.Uuid @map("stall_id")
+  menuItemId  String?      @db.Uuid @map("menu_item_id")
+  orderId     String?      @unique @db.Uuid @map("order_id")
+  rating      Int
+  comment     String?
+  images      String[]     @default([])
+  status      ReviewStatus @default(PENDING)
+  vendorReply String?      @map("vendor_reply")
+  repliedAt   DateTime?    @map("replied_at")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  deletedAt   DateTime?    @map("deleted_at")
+
+  student  Student    @relation(fields: [studentId], references: [id])
+  stall    FoodStall  @relation(fields: [stallId], references: [id])
+  menuItem MenuItem?  @relation(fields: [menuItemId], references: [id])
+  order    Order?     @relation("OrderReview", fields: [orderId], references: [id])
+
+  @@index([studentId])
+  @@index([stallId])
+  @@index([menuItemId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("reviews")
+}
+
+model FavoriteFood {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId  String   @db.Uuid @map("student_id")
+  menuItemId String   @db.Uuid @map("menu_item_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  student  Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, menuItemId])
+  @@index([studentId])
+  @@map("favorite_foods")
+}
+
+// =============================================================================
+// NOTIFICATIONS
+// =============================================================================
+
+model Notification {
+  id         String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type       NotificationType
+  channel    NotificationChannel
+  title      String
+  body       String
+  data       Json?
+  isRead     Boolean             @default(false) @map("is_read")
+  readAt     DateTime?           @map("read_at")
+  isSent     Boolean             @default(false) @map("is_sent")
+  sentAt     DateTime?           @map("sent_at")
+  failedAt   DateTime?           @map("failed_at")
+  failReason String?             @map("fail_reason")
+  // Polymorphic recipients
+  studentId  String?             @db.Uuid @map("student_id")
+  vendorId   String?             @db.Uuid @map("vendor_id")
+  adminId    String?             @db.Uuid @map("admin_id")
+  createdAt  DateTime            @default(now()) @map("created_at")
+  updatedAt  DateTime            @updatedAt @map("updated_at")
+
+  student Student? @relation(fields: [studentId], references: [id])
+  vendor  Vendor?  @relation(fields: [vendorId], references: [id])
+  admin   Admin?   @relation(fields: [adminId], references: [id])
+
+  @@index([studentId, isRead])
+  @@index([vendorId, isRead])
+  @@index([adminId, isRead])
+  @@index([type])
+  @@index([createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+// =============================================================================
+// CONVERSATIONS (WhatsApp)
+// =============================================================================
+
+model Conversation {
+  id              String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId       String             @db.Uuid @map("student_id")
+  whatsappPhone   String             @map("whatsapp_phone")
+  status          ConversationStatus @default(ACTIVE)
+  currentIntent   String?            @map("current_intent")
+  contextData     Json?              @map("context_data")
+  lastMessageAt   DateTime?          @map("last_message_at")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  student  Student       @relation(fields: [studentId], references: [id])
+  messages ChatMessage[]
+
+  @@index([studentId])
+  @@index([whatsappPhone])
+  @@index([status])
+  @@map("conversations")
+}
+
+model ChatMessage {
+  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationId String      @db.Uuid @map("conversation_id")
+  role           MessageRole
+  type           MessageType @default(TEXT)
+  content        String
+  metadata       Json?
+  whatsappMsgId  String?     @unique @map("whatsapp_msg_id")
+  isDelivered    Boolean     @default(false) @map("is_delivered")
+  isRead         Boolean     @default(false) @map("is_read")
+  llmModel       String?     @map("llm_model")
+  latencyMs      Int?        @map("latency_ms")
+  tokensUsed     Int?        @map("tokens_used")
+  createdAt      DateTime    @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt(sort: Desc)])
+  @@map("chat_messages")
+}
+
+// =============================================================================
+// AI RECOMMENDATIONS
+// =============================================================================
+
+model Recommendation {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId   String    @db.Uuid @map("student_id")
+  menuItemId  String    @db.Uuid @map("menu_item_id")
+  score       Float     @db.DoublePrecision
+  reason      String
+  category    String
+  shownAt     DateTime? @map("shown_at")
+  clickedAt   DateTime? @map("clicked_at")
+  orderedAt   DateTime? @map("ordered_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  expiresAt   DateTime  @map("expires_at")
+
+  student  Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([menuItemId])
+  @@index([score(sort: Desc)])
+  @@map("recommendations")
+}
+
+// =============================================================================
+// QUEUE & ANALYTICS
+// =============================================================================
+
+model QueueStatus {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stallId         String    @db.Uuid @map("stall_id")
+  queueLength     Int       @map("queue_length")
+  avgWaitMinutes  Int       @map("avg_wait_minutes")
+  kitchenLoad     Float     @map("kitchen_load") // 0.0 to 1.0
+  throughput      Float     @map("throughput") // orders per hour
+  confidence      Float     @default(0.8) @map("confidence")
+  recordedAt      DateTime  @default(now()) @map("recorded_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  stall FoodStall @relation(fields: [stallId], references: [id])
+
+  @@index([stallId])
+  @@index([recordedAt(sort: Desc)])
+  @@map("queue_statuses")
+}
+
+model Analytics {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stallId         String    @db.Uuid @map("stall_id")
+  date            DateTime  @db.Date
+  totalOrders     Int       @default(0) @map("total_orders")
+  completedOrders Int       @default(0) @map("completed_orders")
+  cancelledOrders Int       @default(0) @map("cancelled_orders")
+  revenue         Decimal   @default(0) @db.Decimal(12, 2)
+  avgOrderValue   Decimal   @default(0) @db.Decimal(10, 2) @map("avg_order_value")
+  avgPrepTime     Float     @default(0) @map("avg_prep_time")
+  peakHour        Int?      @map("peak_hour")
+  totalCustomers  Int       @default(0) @map("total_customers")
+  newCustomers    Int       @default(0) @map("new_customers")
+  repeatCustomers Int       @default(0) @map("repeat_customers")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  stall FoodStall @relation(fields: [stallId], references: [id])
+
+  @@unique([stallId, date])
+  @@index([stallId])
+  @@index([date(sort: Desc)])
+  @@map("analytics")
+}
+
+model DemandPrediction {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stallId         String         @db.Uuid @map("stall_id")
+  type            PredictionType
+  predictedDate   DateTime       @map("predicted_date") @db.Date
+  predictedValue  Float          @map("predicted_value")
+  confidence      Float          @map("confidence")
+  features        Json
+  actualValue     Float?         @map("actual_value")
+  accuracy        Float?
+  modelVersion    String         @default("v1") @map("model_version")
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  stall FoodStall @relation(fields: [stallId], references: [id])
+
+  @@index([stallId])
+  @@index([predictedDate])
+  @@index([type])
+  @@map("demand_predictions")
+}
+
+// =============================================================================
+// KNOWLEDGE BASE (RAG)
+// =============================================================================
+
+model KnowledgeBase {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type        EmbeddingType
+  title       String
+  content     String
+  metadata    Json?
+  embedding   Unsupported("vector(1536)")?
+  isActive    Boolean       @default(true) @map("is_active")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@index([isActive])
+  @@map("knowledge_base")
+}
+
+// =============================================================================
+// ADMIN FEATURES
+// =============================================================================
+
+model Announcement {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authorId    String             @db.Uuid @map("author_id")
+  title       String
+  content     String
+  target      AnnouncementTarget @default(EVERYONE)
+  status      AnnouncementStatus @default(DRAFT)
+  scheduledAt DateTime?          @map("scheduled_at")
+  publishedAt DateTime?          @map("published_at")
+  archivedAt  DateTime?          @map("archived_at")
+  imageUrl    String?            @map("image_url")
+  isPinned    Boolean            @default(false) @map("is_pinned")
+  viewCount   Int                @default(0) @map("view_count")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  deletedAt   DateTime?          @map("deleted_at")
+
+  author Admin @relation("AnnouncementAuthor", fields: [authorId], references: [id])
+
+  @@index([status])
+  @@index([target])
+  @@index([publishedAt(sort: Desc)])
+  @@index([deletedAt])
+  @@map("announcements")
+}
+
+model FAQ {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  question    String
+  answer      String
+  category    String    @default("general")
+  isPublished Boolean   @default(true) @map("is_published")
+  sortOrder   Int       @default(0) @map("sort_order")
+  viewCount   Int       @default(0) @map("view_count")
+  helpful     Int       @default(0)
+  notHelpful  Int       @default(0) @map("not_helpful")
+  embedding   Unsupported("vector(1536)")?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@index([category])
+  @@index([isPublished])
+  @@index([deletedAt])
+  @@map("faqs")
+}
+
+model SupportTicket {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketNo     String         @unique @map("ticket_no")
+  studentId    String         @db.Uuid @map("student_id")
+  subject      String
+  description  String
+  category     String         @default("general")
+  priority     TicketPriority @default(MEDIUM)
+  status       TicketStatus   @default(OPEN)
+  assignedTo   String?        @db.Uuid @map("assigned_to")
+  resolvedAt   DateTime?      @map("resolved_at")
+  resolution   String?
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  deletedAt    DateTime?      @map("deleted_at")
+
+  student  Student              @relation(fields: [studentId], references: [id])
+  replies  SupportTicketReply[]
+
+  @@index([studentId])
+  @@index([status])
+  @@index([priority])
+  @@index([deletedAt])
+  @@map("support_tickets")
+}
+
+model SupportTicketReply {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketId  String   @db.Uuid @map("ticket_id")
+  content   String
+  role      UserRole
+  authorId  String   @db.Uuid @map("author_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@map("support_ticket_replies")
+}
+
+model AuditLog {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  action      AuditAction
+  description String
+  ipAddress   String?     @map("ip_address")
+  userAgent   String?     @map("user_agent")
+  metadata    Json?
+  // Polymorphic actor
+  studentId   String?     @db.Uuid @map("student_id")
+  vendorId    String?     @db.Uuid @map("vendor_id")
+  adminId     String?     @db.Uuid @map("admin_id")
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  student Student? @relation("StudentAuditLogs", fields: [studentId], references: [id])
+  vendor  Vendor?  @relation("VendorAuditLogs", fields: [vendorId], references: [id])
+  admin   Admin?   @relation("AdminAuditLogs", fields: [adminId], references: [id])
+
+  @@index([action])
+  @@index([studentId])
+  @@index([vendorId])
+  @@index([adminId])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model SystemConfig {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key         String   @unique
+  value       Json
+  description String?
+  isPublic    Boolean  @default(false) @map("is_public")
+  updatedById String?  @db.Uuid @map("updated_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([key])
+  @@map("system_configs")
+}
+
+model Coupon {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code            String    @unique
+  description     String?
+  discountType    String    @default("PERCENTAGE") @map("discount_type")
+  discountValue   Decimal   @db.Decimal(10, 2) @map("discount_value")
+  minOrderAmount  Decimal?  @db.Decimal(10, 2) @map("min_order_amount")
+  maxDiscount     Decimal?  @db.Decimal(10, 2) @map("max_discount")
+  usageLimit      Int?      @map("usage_limit")
+  usedCount       Int       @default(0) @map("used_count")
+  isActive        Boolean   @default(true) @map("is_active")
+  validFrom       DateTime  @map("valid_from")
+  validUntil      DateTime  @map("valid_until")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([code])
+  @@index([isActive])
+  @@map("coupons")
+}

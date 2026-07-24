@@ -1,0 +1,27 @@
+{
+  "name": "@smartfood/whatsapp",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@smartfood/ai": "workspace:*",
+    "@smartfood/database": "workspace:*",
+    "@smartfood/shared": "workspace:*",
+    "axios": "^1.7.7",
+    "twilio": "^6.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "typescript": "^5.6.3"
+  }
+}
